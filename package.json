@@ -4,7 +4,7 @@
   "description": "copied from dasilvacontin/mog-2016",
   "main": "tron/server.js",
   "scripts": {
-    "build": "browserify tron/client.js -o tron/dist/bundle.js && (say 'go es!' || echo 'built!')",
+    "build": "browserify tron/client.js -o tron/dist/bundle.js && echo 'built!'",
     "watch": "chokidar 'tron/src/**/*.js' 'tron/test/**/*.js' -c 'npm test && npm run build'",
     "test": "standard && tape tron/test/**/*.spec.js | tap-notify | tap-spec",
     "start": "npm i --only=dev && npm run build && node tron/src/server.js"
