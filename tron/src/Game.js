@@ -10,6 +10,7 @@ class Game {
     this.minsize = 5
     this.maxsize = 15
     this.bsize = (Math.random() * (this.maxsize - this.minsize) + this.minsize) | 0
+    this.bsize = 30
     for (var i = 0; i < this.bsize; ++i) {
       this.turn.board[i] = []
       for (var j = 0; j < this.bsize; ++j) this.turn.board[i][j] = 0
@@ -22,10 +23,16 @@ class Game {
   }
   sendGameState () {
     /* send turn to other players */
-    const game = Object.assign({}, this)
-    for (var p = 0; p < this.sockets.length; ++p) {
-      if (this.sockets[p] != null) this.sockets[p].emit('game:state', game)
+    const turnIndex = this.turns.length - 1
+
+    const state = {
+      turn: this.turn,
+      players: this.players
     }
+
+    this.sockets.forEach((socket) => {
+      if (socket) socket.emit('game:state', state, turnIndex)
+    })
   }
   newGame (pid) {
     /* Add to bikes array */
@@ -125,5 +132,4 @@ class Game {
     }
   }
 }
-
 exports.Game = Game

@@ -1,100 +1,144 @@
-/* global myCanvas, requestAnimationFrame */
 const io = require('socket.io-client')
 const { Game } = require('./src/Game.js')
-const { Turn } = require('./src/Turn.js')
 const C = require('./src/constants.js')
 
-let debugEnabled = false
-let debugTurn = null
 const game = new Game()
+game.turns = []
+
 const socket = io()
-
-let sentPing
-let ping = ''
-// client's Date.now() - server's Date.now()
-let clientLead = 0
-
-function sendPing () {
-  sentPing = Date.now()
-  socket.emit('game:ping')
-}
-sendPing()
-
-socket.on('game:pong', (serverNow) => {
-  ping = (Date.now() - sentPing) / 2
-  clientLead = Date.now() - (serverNow + ping)
-  console.log({ ping, clientLead })
-  setTimeout(sendPing, 500)
-})
-
 socket.on('game:state', (state, turnIndex) => {
-  // ignore game states unless they are for turn 0
-  if (turnIndex !== 0) {
-    debugTurn = state.turn
-    return
-  }
-
-  const { board, bikes, inputs } = state.turn
-  const turn = new Turn(board, bikes, inputs)
-
-  game.turn = turn
-  game.turns = [turn]
   game.players = state.players
-  game.interval = state.interval
-  game.lastTurn = state.timestamp + clientLead
+  game.turn = state.turn
+  if (turnIndex < game.turns.length) game.turns = []
+  game.turns[turnIndex] = state.turn
+  prevTurn = turnIndex - 1
+  let bikeId = game.players['/#' + socket.id] + 1
+  if (bikeId) playerColor.style.backgroundColor = colors[bikeId].hex
+  if (game.turn.bikes.filter(bike => bike).length < 2) waitingPlayers.innerHTML = 'Waiting for players...'
+  else waitingPlayers.innerHTML = ''
 })
 
-socket.on('changeDir', (socketId, dir, turnIndex) => {
-  // don't apply your own input changes, may cause render flicker when
-  // multiple input changes were sent in the same turn
-
-  if (socketId === `/#${socket.id}`) return
-  game.onChangeDir({ id: socketId }, dir, turnIndex)
-})
-
-socket.on('chatMessage', (content) => {
-  const messageDOM = document.createElement('p')
-  messageDOM.innerHTML = escapeHTML(`Anon: ${content}`)
-  chatContainer.appendChild(messageDOM)
-})
-
-const edge = 10
-const offset = 1
-
-myCanvas.width = window.innerWidth
-myCanvas.height = window.innerHeight
+const myCanvas = document.getElementById('myCanvas')
 const ctx = myCanvas.getContext('2d')
 
-const colors = ['#F8F8F8', 'red', 'blue', 'cyan', 'purple', 'yellow', 'orange', 'green', 'pink', 'grey', 'teal', 'brown']
-global.tronColors = colors
+myCanvas.width = myCanvas.offsetWidth
+myCanvas.height = myCanvas.offsetHeight
+ctx.imageSmoothingEnabled = false
+ctx.mozImageSmoothingEnabled = false
 
-requestAnimationFrame(loop)
-function loop () {
-  requestAnimationFrame(loop)
+const colors = [C.BLACK, C.RED, C.BLUE, C.CYAN, C.PURPLE, C.YELLOW, C.ORANGE, C.GREEN, C.PINK, C.GREY, C.TEAL, C.BROWN]
+const offset = 1
+const edge = 14
+const playerColor = document.getElementById('playerColor')
+const waitingPlayers = document.getElementById('waitingForPlayers')
+const trailH = document.getElementById('trailHorizontal')
+const trailV = document.getElementById('trailVertical')
+const trailCornerTl = document.getElementById('trailCornerTl')
+const trailCornerTr = document.getElementById('trailCornerTr')
+const trailCornerBl = document.getElementById('trailCornerBl')
+const trailCornerBr = document.getElementById('trailCornerBr')
 
-  const now = Date.now()
-  while (now - game.lastTurn >= game.interval) {
-    game.tick()
-    game.lastTurn += game.interval
-  }
+var trailBuffer = {}
+var bikesBuffer = {}
+var prevTurn = 0
 
+window.requestAnimationFrame(renderGame)
+function renderGame () {
+  window.requestAnimationFrame(renderGame)
   const turn = game.turn
+  if (prevTurn === 0) {
+    trailBuffer = {}
+    bikesBuffer = {}
+    for (let i = 0; i < turn.board.length; ++i) {
+      const row = turn.board[i]
+      for (let j = 0; j < row.length; ++j) {
+        const rect = makeRect(i, j)
+        ctx.fillStyle = C.BLACK.hex
+        ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
+      }
+    }
+  }
   for (let i = 0; i < turn.board.length; ++i) {
     const row = turn.board[i]
     for (let j = 0; j < row.length; ++j) {
       const cell = row[j]
-      const color = colors[cell]
-      ctx.fillStyle = color
-      ctx.fillRect(j * (edge + offset), i * (edge + offset), edge, edge)
-
-      if (!debugTurn || !debugEnabled) continue
-
-      const debugCell = debugTurn.board[i][j]
-      const debugColor = colors[debugCell]
-      ctx.fillStyle = debugColor
-      ctx.fillRect(j * (edge + offset), i * (edge + offset), edge / 2, edge / 2)
+      const key = i + '_' + j
+      const rect = makeRect(i, j)
+      ctx.fillStyle = C.BLACK.hex
+      ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
+      if (cell > C.EMPTY_CELL && prevTurn >= 0) {
+        const bike = turn.bikes[cell - 1]
+        bikesBuffer[cell] = { i: bike.i, j: bike.j }
+        if (!trailBuffer[key]) {
+          const dir = bike.dir
+          const prevBike = game.turns[prevTurn].bikes[cell - 1]
+          const prevDir = prevBike.dir
+          const prevPos = { i: prevBike.j, j: prevBike.i }
+          trailBuffer[key] = { bikeId: cell, dir: dir, prevDir: prevDir, i: prevPos.i, j: prevPos.j }
+        }
+      } else if (cell === C.EMPTY_CELL && trailBuffer[key]) {
+        delete bikesBuffer[trailBuffer[key].bikeId]
+        delete trailBuffer[key]
+      }
     }
   }
+
+  for (let key in trailBuffer) {
+    drawTrail(trailBuffer[key])
+  }
+
+  for (let key in bikesBuffer) {
+    const bike = bikesBuffer[key]
+    const color = colors[key].hex
+    const rect = makeRect(bike.i, bike.j)
+    ctx.fillStyle = color
+    ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
+  }
+}
+
+function drawTrail (trail) {
+  let dir = trail.dir
+  let prevDir = trail.prevDir
+  let img = trailH
+  var rect = makeRect(trail.j, trail.i)
+  if (dir === prevDir) {
+    if (dir === C.LEFT || dir === C.RIGHT) img = trailV
+    else img = trailH
+  } else {
+    if ((dir === C.LEFT && prevDir === C.UP) || (dir === C.DOWN && prevDir === C.RIGHT)) img = trailCornerBl
+    else if ((dir === C.RIGHT && prevDir === C.UP) || (dir === C.DOWN && prevDir === C.LEFT)) img = trailCornerBr
+    else if ((dir === C.LEFT && prevDir === C.DOWN) || (dir === C.UP && prevDir === C.RIGHT)) img = trailCornerTl
+    else img = trailCornerTr
+  }
+  drawImage(img, rect.i, rect.j, rect.w, rect.h, colors[trail.bikeId])
+}
+
+function drawImage (img, i, j, width, height, playerColor = C.WHITE) {
+  ctx.drawImage(img, i, j, width, height)
+  var data = ctx.getImageData(i, j, width, height)
+  for (var k = 0; k < data.data.length; ++k) {
+    var index = 4 * k
+    var r = data.data[index]
+    var g = data.data[index + 1]
+    var b = data.data[index + 2]
+    var a = data.data[index + 3]
+
+    if (compareColor(r, g, b, a, C.MAGENTA)) {
+      data.data[index] = playerColor.r // red
+      data.data[index + 1] = playerColor.g // green
+      data.data[index + 2] = playerColor.b // blue
+      data.data[index + 3] = playerColor.a // alpha
+    }
+  }
+  ctx.putImageData(data, i, j)
+}
+
+function compareColor (r, g, b, a, color) {
+  return (r === color.r && g === color.g && b === color.b && a === color.a)
+}
+
+function makeRect (i, j) {
+  return { i: j * (edge + offset), j: i * (edge + offset), w: edge, h: edge }
 }
 
 const KEY = {
@@ -111,51 +155,8 @@ const DIR_FOR_KEY = {
   [KEY.D]: C.RIGHT
 }
 
-const ENTER = 13
-const chatInput = document.getElementById('chatInput')
 document.addEventListener('keydown', function (e) {
-  if (e.keyCode === ENTER) return sendMessage()
-
   const dir = DIR_FOR_KEY[e.keyCode]
   if (dir == null) return
-  const turnIndex = game.turns.length - 1
-  game.onChangeDir({ id: `/#${socket.id}` }, dir, turnIndex)
-  socket.emit('changeDir', dir, turnIndex)
+  socket.emit('changeDir', dir, game.turns.length - 1)
 })
-
-/*
- * const chatSocket = io()
- * chatSocket.on('chatMessage', (message) => {
- *
- * })
- *
- * socket.id
- * #/iuoasdufhna8s3286
- */
-
-var escape = document.createElement('textarea')
-function escapeHTML (html) {
-  escape.textContent = html
-  return escape.innerHTML
-}
-
-function sendMessage () {
-  let content = chatInput.value.trim()
-  chatInput.value = ''
-  if (content.length === 0) return
-
-  if (content === '/debug on') {
-    debugEnabled = true
-    return
-  } else if (content === '/debug off') {
-    debugEnabled = false
-    return
-  }
-
-  console.log('debugEnabled', debugEnabled)
-  socket.emit('chatMessage', content)
-}
-global.sendMessage = sendMessage
-
-// chat
-const chatContainer = document.getElementById('chatContainer')

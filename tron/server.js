@@ -4,10 +4,10 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const { Game } = require('./src/Game.js')
 
-const game = new Game({ size: 50, interval: 100 })
-game.startInterval()
+const game = new Game()
+setInterval(game.tick.bind(game), 150)
 
-app.use(express.static('dist'))
+app.use(express.static('tron/dist'))
 app.get('/', function (req, res) {
   res.sendfile('./dist/index.html')
 })
@@ -25,11 +25,8 @@ io.on('connection', function (socket) {
   })
 
   socket.on('disconnect', function () {
+    console.log(`${socket.id} disconnected`)
     game.onPlayerLeave(socket)
-  })
-
-  socket.on('chatMessage', (content) => {
-    io.sockets.emit('chatMessage', content)
   })
 
   socket.on('game:ping', () => socket.emit('game:pong', Date.now()))
