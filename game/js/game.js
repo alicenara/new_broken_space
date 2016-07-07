@@ -79,11 +79,11 @@ function preload () {
 
 // Grid variables
 var grid
-var gridInfo
+var gridInfo = []
 var gridOffset = 50
-var gridX = 5
-var gridY = 5
-var cellSize = 192
+var gridX = 10
+var gridY = 8
+var cellSize = 100
 
 // Board variables
 var board
@@ -125,6 +125,9 @@ var bloodGroup
 var aliensTimer = 5000
 
 function create () {
+  // Physics
+  game.physics.startSystem(Phaser.Physics.ARCADE)
+
   //  Game world: offset of grid and how much cells multiplied with its size
   game.world.setBounds(0, 0, (gridOffset * 2) + gridX * cellSize, (gridOffset * 2) + gridY * cellSize)
 
@@ -133,7 +136,27 @@ function create () {
   game.camera.y = (((gridOffset * 2) + gridY * cellSize) / 2) - (game.height / 2)
 
   // Background
-  game.add.sprite(0, 0, (gridOffset * 2) + gridX * cellSize, (gridOffset * 2) + gridY * cellSize, 'bg')
+  game.add.tileSprite(0, 0, (gridOffset * 2) + gridX * cellSize, (gridOffset * 2) + gridY * cellSize, 'bg')
+
+  // Create the grid
+  grid = game.add.group()
+  grid.createMultiple(gridX * gridY, 'grid', null, true)
+  grid.align(gridX, -1, 1, 1)
+  grid.x = grid.y = gridOffset
+  // for(var i = 0; i < gridX; i++){
+  //   gridInfo[i] = []
+  //   for(var j = 0; j < gridY; j++){
+  //     var cell = grid.create(gridOffset + i * cellSize, gridOffset + j * cellSize, "grid");
+  //
+  //     // Add event listeners to every grid cell
+  //     // cell.inputEnabled = true;
+  //     // cell.events.onInputOver.add(this.cellOver, this);
+  //     // cell.events.onInputOut.add(this.cellOut, this);
+  //     // cell.events.onInputDown.add(this.cellClick, this);
+  //     cell.tint = 0xf2f2f2;
+  //     gridInfo[i][j] = cell;
+  //   }
+  // }
 
     // //  Our tiled scrolling background
     // land = game.add.tileSprite(0, 0, 800, 600, 'earth')
