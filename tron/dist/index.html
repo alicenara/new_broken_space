@@ -10,7 +10,8 @@
       font-family: helvetica, verdana;
       font-variant: small-caps;
       background: url("./imgs/nyancat-1.jpg") repeat;
-      -webkit-animation: loader 5s steps(500) infinite;
+    }
+      /*-webkit-animation: loader 5s steps(500) infinite;
       -moz-animation: loader 5s steps(500) infinite;
       -ms-animation: loader 5s steps(500) infinite;
       -o-animation: loader 5s steps(500) infinite;
@@ -55,8 +56,17 @@
       to {
         background-position: -3000px 0;
       }
+    }*/
+    #pre_game {
+      width: 100%;
+      height: 100%;
+      background-color: #f2f2f2;
+      background-image: none;
+      text-align:center;
     }
-
+    #start_game {
+      display:none;
+    }
     main {
         width:100%;
         float:left;
@@ -93,18 +103,28 @@
   </style>
 </head>
 <body>
-  <main>
+  <div id="pre_game">
     <p id="waitingForPlayers">Waiting for players...</p>
-    <canvas id="myCanvas" width="450" height="450"></canvas>
-    <p id="playerColor">You</p>
-    <resources class="images">
-      <img id="trailVertical" src="imgs/trail_horizontal.png">
-      <img id="trailHorizontal" src="imgs/trail_vertical.png">
-      <img id="trailCornerTl" src="imgs/trail_corner_tl.png">
-      <img id="trailCornerTr" src="imgs/trail_corner_tr.png">
-      <img id="trailCornerBl" src="imgs/trail_corner_bl.png">
-      <img id="trailCornerBr" src="imgs/trail_corner_br.png">
-    </resources>
-  </main>
+    <button id="start_game">Start Game</button>
+    <p> Total players: <span id="players_count"> 0 </span></p>
+  </div>
+  <div id="main_container">
+    <main>
+      <div id="to_rotate">
+        <canvas id="myCanvas" width="450" height="450"></canvas>
+        <p id="playerColor">You</p>
+        <resources class="images">
+          <img id="trailVertical" src="imgs/trail_horizontal.png">
+          <img id="trailHorizontal" src="imgs/trail_vertical.png">
+          <img id="trailCornerTl" src="imgs/trail_corner_tl.png">
+          <img id="trailCornerTr" src="imgs/trail_corner_tr.png">
+          <img id="trailCornerBl" src="imgs/trail_corner_bl.png">
+          <img id="trailCornerBr" src="imgs/trail_corner_br.png">
+          <img id='cap_nyan' src ='imgs/nyan-cat.png' height="5" width="5">
+          <img id="floor" src="imgs/chocoCenter.png" height="10" width="10">
+        </resources>
+      </div>
+    </main>
+  </div>
   <script src="bundle.js"></script>
 </body>

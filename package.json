@@ -7,7 +7,8 @@
     "build": "browserify tron/client.js -o tron/dist/bundle.js && echo 'built!'",
     "watch": "chokidar 'tron/src/**/*.js' 'tron/test/**/*.js' -c 'npm test && npm run build'",
     "test": "standard && tape tron/test/**/*.spec.js | tap-notify | tap-spec",
-    "start": "npm i --only=dev && npm run build && node tron/server.js"
+    "start": " npm run build && node tron/server.js",
+    "broken": " http-server -a 127.0.0.1"
   },
   "repository": {
     "type": "git",
@@ -38,6 +39,7 @@
   "dependencies": {
     "clone": "^1.0.2",
     "express": "^4.14.0",
+    "howler": "^1.1.29",
     "http-server": "^0.9.0",
     "phaser": "^2.5.0",
     "socket.io": "^1.4.8",

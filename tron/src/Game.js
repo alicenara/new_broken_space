@@ -6,6 +6,8 @@ class Game {
     this.players = {}
     this.sockets = []
     this.turn = new Turn([], [], [])
+    this.god = null
+    this.isGameStarted = false
 
     this.minsize = 5
     this.maxsize = 15
@@ -33,6 +35,17 @@ class Game {
     this.sockets.forEach((socket) => {
       if (socket) socket.emit('game:state', state, turnIndex)
     })
+    if (this.god != null) {
+      this.god.emit('game:state', state, turnIndex)
+    }
+  }
+  sendStarting () {
+    this.sockets.forEach((socket) => {
+      if (socket) socket.emit('game:starting')
+    })
+    if (this.god != null) {
+      this.god.emit('game:starting')
+    }
   }
   newGame (pid) {
     /* Add to bikes array */
@@ -93,10 +106,13 @@ class Game {
     }
   }
   onPlayerLeave (psocket) {
-    const pid = this.players[psocket.id]
-    delete this.players[psocket.id]
-    this.sockets[pid] = null
-    this.turn.setInput(pid, C.SELF_DESTRUCT)
+    if (psocket === this.god) this.god = null
+    else {
+      const pid = this.players[psocket.id]
+      delete this.players[psocket.id]
+      this.sockets[pid] = null
+      this.turn.setInput(pid, C.SELF_DESTRUCT)
+    }
     this.sendGameState()
   }
   isGameFinished () {
@@ -121,7 +137,7 @@ class Game {
     this.sendGameState()
   }
   tick () {
-    if (this.turn.bikes.length > 1) {
+    if (this.turn.bikes.length > 1 && this.isGameStarted) {
       if (this.isGameFinished()) {
         this.finishGame()
       } else {

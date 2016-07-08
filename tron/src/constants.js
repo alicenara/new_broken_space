@@ -8,7 +8,8 @@ module.exports = {
   EMPTY_CELL: 0,
 
   WHITE: {r: 241, g: 241, b: 241, a: 255, hex: '#f1f1f1'},
-  BLACK: {r: 35, g: 35, b: 37, a: 255, hex: '#232325'},
+  // BLACK: {r: 35, g: 35, b: 37, a: 255, hex: '#232325'},
+  BLACK: {r: 152, g: 118, b: 84, a: 255, hex: '#987654'},
   MAGENTA: {r: 255, g: 0, b: 255, a: 255, hex: 'magenta'},
 
   BLUE: {r: 128, g: 166, b: 255, a: 255, hex: '#80a6ff'},
@@ -21,5 +22,6 @@ module.exports = {
   PINK: {r: 100, g: 82, b: 86, a: 255, hex: '#ffd1dc'},
   GREY: {r: 83, g: 83, b: 83, a: 255, hex: '#d3d3d3'},
   TEAL: {r: 56, g: 142, b: 142, a: 255, hex: '#388E8E'},
-  BROWN: {r: 152, g: 118, b: 84, a: 255, hex: '#987654'}
+  // BROWN: {r: 152, g: 118, b: 84, a: 255, hex: '#987654'}
+  BROWN: {r: 35, g: 35, b: 37, a: 255, hex: '#232325'}
 }

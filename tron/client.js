@@ -1,11 +1,12 @@
 const io = require('socket.io-client')
 const { Game } = require('./src/Game.js')
 const C = require('./src/constants.js')
-
+const { Howl } = require('howler')
 const game = new Game()
 game.turns = []
 
 const socket = io()
+
 socket.on('game:state', (state, turnIndex) => {
   game.players = state.players
   game.turn = state.turn
@@ -14,8 +15,45 @@ socket.on('game:state', (state, turnIndex) => {
   prevTurn = turnIndex - 1
   let bikeId = game.players['/#' + socket.id] + 1
   if (bikeId) playerColor.style.backgroundColor = colors[bikeId].hex
-  if (game.turn.bikes.filter(bike => bike).length < 2) waitingPlayers.innerHTML = 'Waiting for players...'
-  else waitingPlayers.innerHTML = ''
+  // if (game.turn.bikes.filter(bike => bike).length < 2) waitingPlayers.innerHTML = 'Waiting for players...'
+  // else waitingPlayers.innerHTML = ''
+  playersCount.innerHTML = game.turn.bikes.length
+})
+socket.on('godmode', () => {
+  waitingPlayers.innerHTML = 'GOD MODE - Waiting players'
+  playerColor.remove()
+  startGame.style.display = 'inline-block'
+})
+socket.on('game:starting', () => {
+  var num = 4
+  var sound = new Howl({urls: ['imgs/nya.mp3']})
+  sound.play()
+  var interval = setInterval(function () {
+    preGame.innerHTML = 'Starting in ' + num
+    num -= 1
+    if (num === 0) {
+      preGame.style.display = 'none'
+      mainContainer.style.display = 'block'
+      var x = 0
+      var y = 0
+      var tosum = 100
+      var rot = 0
+      var torot = 10
+      setInterval(function () {
+        x -= 100
+        y += tosum
+        if (y >= 1000) tosum = -100
+        else if (y <= 0) tosum = 100
+        document.body.style.backgroundPosition = x + 'px ' + y + 'px'
+
+        rot += torot
+        if (rot >= 360) torot = -10
+        else if (rot <= 0) torot = 10
+        toRotate.style.transform = 'rotate(' + rot + 'deg)'
+      }, 300)
+      clearInterval(interval)
+    }
+  }, 1000)
 })
 
 const myCanvas = document.getElementById('myCanvas')
@@ -31,16 +69,26 @@ const offset = 1
 const edge = 14
 const playerColor = document.getElementById('playerColor')
 const waitingPlayers = document.getElementById('waitingForPlayers')
+const mainContainer = document.getElementById('main_container')
+const preGame = document.getElementById('pre_game')
+const startGame = document.getElementById('start_game')
+const toRotate = document.getElementById('to_rotate')
+const playersCount = document.getElementById('players_count')
 const trailH = document.getElementById('trailHorizontal')
 const trailV = document.getElementById('trailVertical')
 const trailCornerTl = document.getElementById('trailCornerTl')
 const trailCornerTr = document.getElementById('trailCornerTr')
 const trailCornerBl = document.getElementById('trailCornerBl')
 const trailCornerBr = document.getElementById('trailCornerBr')
+const head = document.getElementById('cap_nyan')
+const floor = document.getElementById('floor')
 
 var trailBuffer = {}
 var bikesBuffer = {}
 var prevTurn = 0
+var pat = ctx.createPattern(floor, 'repeat')
+var hat = ctx.createPattern(head, 'repeat')
+mainContainer.style.display = 'none'
 
 window.requestAnimationFrame(renderGame)
 function renderGame () {
@@ -53,7 +101,7 @@ function renderGame () {
       const row = turn.board[i]
       for (let j = 0; j < row.length; ++j) {
         const rect = makeRect(i, j)
-        ctx.fillStyle = C.BLACK.hex
+        ctx.fillStyle = pat
         ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
       }
     }
@@ -64,7 +112,7 @@ function renderGame () {
       const cell = row[j]
       const key = i + '_' + j
       const rect = makeRect(i, j)
-      ctx.fillStyle = C.BLACK.hex
+      ctx.fillStyle = pat
       ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
       if (cell > C.EMPTY_CELL && prevTurn >= 0) {
         const bike = turn.bikes[cell - 1]
@@ -89,9 +137,9 @@ function renderGame () {
 
   for (let key in bikesBuffer) {
     const bike = bikesBuffer[key]
-    const color = colors[key].hex
+    // const color = colors[key].hex
     const rect = makeRect(bike.i, bike.j)
-    ctx.fillStyle = color
+    ctx.fillStyle = hat
     ctx.fillRect(rect.i, rect.j, rect.w, rect.h)
   }
 }
@@ -158,5 +206,8 @@ const DIR_FOR_KEY = {
 document.addEventListener('keydown', function (e) {
   const dir = DIR_FOR_KEY[e.keyCode]
   if (dir == null) return
-  socket.emit('changeDir', dir, game.turns.length - 1)
+  socket.emit('changeDir', dir)
+})
+document.getElementById('start_game').addEventListener('click', function (e) {
+  socket.emit('startGaem')
 })

@@ -1,5 +1,3 @@
-// const Phaser = require('phaser.min.js')
-
 const Alien = function (index, game, x, y) {
   // var x = game.world.randomX
   // var y = game.world.randomY
@@ -78,7 +76,7 @@ function preload () {
 }
 
 // Grid variables
-var grid
+var newGrid
 var gridInfo = []
 var gridOffset = 50
 var gridX = 10
@@ -139,10 +137,11 @@ function create () {
   game.add.tileSprite(0, 0, (gridOffset * 2) + gridX * cellSize, (gridOffset * 2) + gridY * cellSize, 'bg')
 
   // Create the grid
-  grid = game.add.group()
-  grid.createMultiple(gridX * gridY, 'grid', null, true)
-  grid.align(gridX, -1, 1, 1)
-  grid.x = grid.y = gridOffset
+  newGrid = game.add.group()
+  newGrid.createMultiple(gridX * gridY, 'grid', null, true)
+  newGrid.align(gridX, -1, 10, 10)
+  newGrid.x = newGrid.y = gridOffset
+
   // for(var i = 0; i < gridX; i++){
   //   gridInfo[i] = []
   //   for(var j = 0; j < gridY; j++){
